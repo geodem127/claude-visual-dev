@@ -28,7 +28,7 @@ export default function ChatThread(): React.ReactElement {
   const {
     chatMessages, pinnedElement, setPinnedElement,
     addChatMessage, appendStreamChunk, finishStream,
-    attachedFiles, designReferenceBase64,
+    attachedFiles, designReferenceBase64, githubTicket,
   } = useStore();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -40,9 +40,13 @@ export default function ChatThread(): React.ReactElement {
 
   async function send() {
     if (!input.trim() || sending) return;
-    const userText = pinnedElement
-      ? `Element: ${pinnedElement.componentName} (${pinnedElement.filePath})\nSelector: ${pinnedElement.selector}\n\n${input}`
-      : input;
+    const ticketPrefix = githubTicket
+      ? `GitHub Ticket #${githubTicket.number}: ${githubTicket.title}\n${githubTicket.body ? githubTicket.body.slice(0, 500) : ''}\n\n`
+      : '';
+    const elementPrefix = pinnedElement
+      ? `Element: ${pinnedElement.componentName} (${pinnedElement.filePath})\nSelector: ${pinnedElement.selector}\n\n`
+      : '';
+    const userText = `${ticketPrefix}${elementPrefix}${input}`;
 
     addChatMessage({ role: 'user', content: userText });
     setInput('');
@@ -82,6 +86,11 @@ export default function ChatThread(): React.ReactElement {
           </div>
         ))}
       </div>
+      {githubTicket && (
+        <div style={{ ...s.pinChip, background: 'rgba(0,100,200,0.12)' }}>
+          <span>🎫 #{githubTicket.number} {githubTicket.title.slice(0, 40)}{githubTicket.title.length > 40 ? '…' : ''}</span>
+        </div>
+      )}
       {pinnedElement && (
         <div style={s.pinChip}>
           <span>📌 {pinnedElement.componentName}</span>

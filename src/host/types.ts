@@ -8,7 +8,8 @@ export type WebviewMessage =
   | { type: 'DISCARD_BRANCH'; id: string; payload: { branch: string } }
   | { type: 'READ_FILE'; id: string; payload: { path: string } }
   | { type: 'OPEN_FILE'; id: string; payload: { path: string; line?: number } }
-  | { type: 'LIST_FILES'; id: string; payload: { dir: string } };
+  | { type: 'LIST_FILES'; id: string; payload: { dir: string } }
+  | { type: 'FETCH_GITHUB_TICKET'; id: string; payload: { ref: string } };
 
 // Messages sent from host to webview
 export type HostMessage =
@@ -46,4 +47,13 @@ export interface VariantResult {
   branch: string;
   filePath: string;
   generatedContent: string;
+}
+
+export interface GitHubTicket {
+  number: number;
+  title: string;
+  body: string;
+  url: string;
+  state: string;
+  labels: string[];
 }

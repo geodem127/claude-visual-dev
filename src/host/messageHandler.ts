@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import type { WebviewMessage, HostMessage, VariantResult } from './types';
+import fetch from 'node-fetch';
+import type { WebviewMessage, HostMessage, VariantResult, GitHubTicket } from './types';
 import * as fs from './fileSystem';
 import * as git from './gitClient';
 import * as figma from './figmaClient';
@@ -19,6 +20,52 @@ function workspaceRoot(): string {
   const folder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (!folder) throw new Error('No workspace folder open');
   return folder;
+}
+
+async function fetchGitHubTicket(ref: string, token: string): Promise<GitHubTicket> {
+  // Accept: full URL, owner/repo#number, or just a number (uses workspace remote)
+  let owner = '', repo = '', number = '';
+  const urlMatch = ref.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
+  const shortMatch = ref.match(/^([^/]+)\/([^#]+)#(\d+)$/);
+  const numMatch = ref.match(/^#?(\d+)$/);
+
+  if (urlMatch) {
+    [, owner, repo, number] = urlMatch;
+  } else if (shortMatch) {
+    [, owner, repo, number] = shortMatch;
+  } else if (numMatch) {
+    [, number] = numMatch;
+    // Try to infer from workspace git remote
+    try {
+      const simpleGit = (await import('simple-git')).default;
+      const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
+      const remotes = await simpleGit(root).getRemotes(true);
+      const origin = remotes.find(r => r.name === 'origin')?.refs?.fetch ?? '';
+      const m = origin.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
+      if (m) { owner = m[1]; repo = m[2]; }
+    } catch { /* ignore */ }
+    if (!owner) throw new Error('Could not determine repo from workspace. Use owner/repo#number format.');
+  } else {
+    throw new Error('Invalid ticket reference. Use a GitHub issue URL, owner/repo#number, or just #number.');
+  }
+
+  const headers: Record<string, string> = { 'Accept': 'application/vnd.github.v3+json' };
+  if (token) headers['Authorization'] = `token ${token}`;
+
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, { headers });
+  if (!res.ok) throw new Error(`GitHub API ${res.status}: ${res.statusText}`);
+  const data = await res.json() as {
+    number: number; title: string; body: string | null;
+    html_url: string; state: string; labels: { name: string }[];
+  };
+  return {
+    number: data.number,
+    title: data.title,
+    body: data.body ?? '',
+    url: data.html_url,
+    state: data.state,
+    labels: data.labels.map(l => l.name),
+  };
 }
 
 export function registerMessageHandler(panel: vscode.WebviewPanel): vscode.Disposable {
@@ -95,6 +142,12 @@ export function registerMessageHandler(panel: vscode.WebviewPanel): vscode.Dispo
           const root = workspaceRoot();
           await git.deleteBranch(root, msg.payload.branch);
           send(panel, { type: 'RESPONSE', id: msg.id, result: true });
+          break;
+        }
+        case 'FETCH_GITHUB_TICKET': {
+          const token = cfg('githubToken');
+          const ticket = await fetchGitHubTicket(msg.payload.ref, token);
+          send(panel, { type: 'RESPONSE', id: msg.id, result: ticket });
           break;
         }
       }

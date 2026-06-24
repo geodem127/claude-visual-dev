@@ -2,24 +2,47 @@
   "name": "claude-visual-dev",
   "displayName": "Claude Visual Dev",
   "description": "Visual development with Claude — live preview, element annotation, AI-generated variants",
-  "version": "0.1.0",
-  "engines": {
-    "vscode": "^1.85.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onCommand:claudeDev.open"
-  ],
+  "version": "0.2.0",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "repository": { "type": "git", "url": "https://github.com/geodem127/claude-visual-dev" },
+  "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "claudeDev.open",
-        "title": "Claude Visual Dev: Open"
+        "title": "Claude Visual Dev: Open Panel",
+        "icon": "$(layout)"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "claudeVisualDev",
+          "title": "Claude Visual Dev",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "claudeVisualDev": [
+        {
+          "type": "webview",
+          "id": "claudeDev.sidebarView",
+          "name": "Claude Visual Dev"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "claudeDev.open",
+          "when": "view == claudeDev.sidebarView",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "Claude Visual Dev",
       "properties": {
@@ -27,6 +50,11 @@
           "type": "string",
           "default": "",
           "description": "Figma personal access token"
+        },
+        "claudeDev.githubToken": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub personal access token (for private repos)"
         },
         "claudeDev.defaultDevServerPort": {
           "type": "number",
@@ -52,19 +80,18 @@
   "dependencies": {
     "node-fetch": "^3.3.2",
     "puppeteer": "^22.0.0",
-    "simple-git": "^3.22.0",
-    "vsce": "^2.15.0"
+    "simple-git": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "@types/vscode": "^1.85.0",
     "@vitejs/plugin-react": "^4.2.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "typescript": "^5.3.0",
     "vite": "^5.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "zustand": "^4.5.0"
   }
 }

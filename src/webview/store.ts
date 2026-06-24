@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ElementContext, AttachedFile, VariantResult } from '../host/types';
+import type { ElementContext, AttachedFile, VariantResult, GitHubTicket } from '../host/types';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -23,6 +23,7 @@ interface State {
   attachedFiles: AttachedFile[];
   chatMessages: ChatMessage[];
   pinnedElement: ElementContext | null;
+  githubTicket: GitHubTicket | null;
 
   // Center panel
   devServerUrl: string;
@@ -44,6 +45,7 @@ interface State {
   appendStreamChunk: (chunk: string) => void;
   finishStream: () => void;
   setPinnedElement: (el: ElementContext | null) => void;
+  setGithubTicket: (ticket: GitHubTicket | null) => void;
   setDevServerUrl: (url: string) => void;
   setViewport: (v: 'desktop' | 'tablet' | 'mobile') => void;
   setAnnotationMode: (on: boolean) => void;
@@ -60,6 +62,7 @@ export const useStore = create<State>((set) => ({
   attachedFiles: [],
   chatMessages: [],
   pinnedElement: null,
+  githubTicket: null,
   devServerUrl: 'http://localhost:3000',
   viewport: 'desktop',
   annotationMode: false,
@@ -90,6 +93,7 @@ export const useStore = create<State>((set) => ({
     return { chatMessages: msgs };
   }),
   setPinnedElement: (el) => set({ pinnedElement: el }),
+  setGithubTicket: (ticket) => set({ githubTicket: ticket }),
   setDevServerUrl: (url) => set({ devServerUrl: url }),
   setViewport: (v) => set({ viewport: v }),
   setAnnotationMode: (on) => set({ annotationMode: on }),
