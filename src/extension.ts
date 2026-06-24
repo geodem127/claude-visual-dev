@@ -85,13 +85,29 @@ function getWebviewHtml(webview: vscode.Webview, context: vscode.ExtensionContex
   const distPath = path.join(context.extensionPath, 'dist', 'webview');
   const indexPath = path.join(distPath, 'index.html');
   let html = fs.readFileSync(indexPath, 'utf-8');
+
+  // Strip crossorigin attributes — they break module loading in webview sandbox
+  html = html.replace(/\s+crossorigin/g, '');
+
+  // Rewrite asset src/href to vscode-resource URIs.
+  // Strip leading slash before path.join — path.join('/a', '/b') = '/b' on POSIX,
+  // which drops distPath and produces an incorrect URI.
   html = html.replace(/(src|href)="([^"]+)"/g, (match, attr, val) => {
     if (val.startsWith('http') || val.startsWith('//') || val.startsWith('data:')) return match;
-    const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(distPath, val)));
+    const relativePath = val.startsWith('/') ? val.slice(1) : val;
+    const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(distPath, relativePath)));
     return `${attr}="${assetUri}"`;
   });
-  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; script-src 'unsafe-inline' ${webview.cspSource}; style-src 'unsafe-inline' ${webview.cspSource}; frame-src *;">`;
-  html = html.replace('<head>', `<head>${csp}`);
+
+  const csp = [
+    `default-src 'none'`,
+    `img-src ${webview.cspSource} data: https:`,
+    `script-src ${webview.cspSource} 'unsafe-inline'`,
+    `script-src-elem ${webview.cspSource} 'unsafe-inline'`,
+    `style-src ${webview.cspSource} 'unsafe-inline'`,
+    `frame-src *`,
+  ].join('; ');
+  html = html.replace('<head>', `<head><meta http-equiv="Content-Security-Policy" content="${csp}">`);
   return html;
 }
 

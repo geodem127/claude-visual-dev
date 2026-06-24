@@ -1,7 +1,9 @@
 import type { WebviewMessage, HostMessage } from '../host/types';
 
 declare function acquireVsCodeApi(): { postMessage(msg: unknown): void };
-const vscode = acquireVsCodeApi();
+const vscode = typeof acquireVsCodeApi !== 'undefined'
+  ? acquireVsCodeApi()
+  : { postMessage: (_: unknown) => {} };
 
 type Resolver = { resolve: (v: unknown) => void; reject: (e: Error) => void };
 const pending = new Map<string, Resolver>();
