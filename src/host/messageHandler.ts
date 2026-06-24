@@ -59,10 +59,8 @@ export function registerMessageHandler(panel: vscode.WebviewPanel): vscode.Dispo
           break;
         }
         case 'CLAUDE_CHAT': {
-          const apiKey = cfg('claudeApiKey');
           const model = cfg('claudeModel') || 'claude-sonnet-4-6';
-          if (!apiKey) throw new Error('Claude API key not configured. Set claudeDev.claudeApiKey in settings.');
-          await streamChat(msg.payload.messages, apiKey, model, chunk => {
+          await streamChat(msg.payload.messages, model, chunk => {
             send(panel, { type: 'STREAM_CHUNK', id: msg.id, chunk });
           });
           send(panel, { type: 'STREAM_END', id: msg.id });
@@ -70,16 +68,13 @@ export function registerMessageHandler(panel: vscode.WebviewPanel): vscode.Dispo
           break;
         }
         case 'PREVIEW_VARIANT': {
-          const apiKey = cfg('claudeApiKey');
           const model = cfg('claudeModel') || 'claude-sonnet-4-6';
-          if (!apiKey) throw new Error('Claude API key not configured. Set claudeDev.claudeApiKey in settings.');
           const root = workspaceRoot();
           const branch = `claude/variant-${Date.now()}`;
           const generatedContent = await generateVariant(
             msg.payload.element,
             msg.payload.instruction,
             msg.payload.files,
-            apiKey,
             model
           );
           await git.createBranch(root, branch);
