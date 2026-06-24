@@ -1,2 +1,18 @@
 import React from 'react';
-export default function RightPanel() { return <div style={{padding:8,color:'var(--vscode-editor-foreground)'}}>Right Panel</div>; }
+import ElementHeader from './ElementHeader';
+import PropertiesInspector from './PropertiesInspector';
+import InstructionBox from './InstructionBox';
+import VariantHistory from './VariantHistory';
+
+export default function RightPanel(): React.ReactElement {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <ElementHeader />
+      <div style={{ overflowY: 'auto', flexShrink: 0 }}>
+        <PropertiesInspector />
+        <InstructionBox />
+      </div>
+      <VariantHistory />
+    </div>
+  );
+}
